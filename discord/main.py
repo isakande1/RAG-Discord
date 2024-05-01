@@ -91,7 +91,7 @@ async def on_message(message):
         results = db.similarity_search_with_score(message.content, k=1)
         context = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
         history = [
-            ("assistant", f"{context}"),
+            ("ai", f"{context}"),
             ("assistant","you keep your reponses under 500 words")]
         await message.channel.send(query_rag(message.content,history))
 
