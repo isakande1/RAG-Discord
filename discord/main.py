@@ -52,7 +52,7 @@ def add_to_chroma(chunks: list[Document]):
 
 
 
-async def query_rag(message: str, history:list ):
+def query_rag(message: str, history:list ):
     prompt = ChatPromptTemplate.from_messages(history )    
     llm= Ollama(model="llama2")
     chain = prompt | llm | StrOutputParser()
@@ -72,9 +72,9 @@ async def on_ready():
     #     print("Channels:")
     #     for channel in guild.channels:
     #         print(f"  - {channel.name} (ID: {channel.id}, Type: {channel.type})")
-    history = [("system","You are Onix, an Ai financial coach.You always provide well-reasoned answers that are both correct and helpful.")]
+    history = [("ai","You are Onix, an Ai financial coach.You always provide well-reasoned answers that are both correct and helpful.You only need two sentences to introduce yourself")]
     channel = client.get_channel(channelId)
-    await channel.send(await query_rag("introduce yourself",history))
+    await channel.send( query_rag("Introduce myself in two sentences",history))
     print('we have logged in as {0.user}'.format(client))
     
 
@@ -91,7 +91,8 @@ async def on_message(message):
         results = db.similarity_search_with_score(message.content, k=1)
         context = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
         history = [
-            ("system", f"You always provide well-reasoned answers that are both correct and helpful.Use this {context} as reference when answering to question, be clear and concise .")]
-        await message.channel.send(await query_rag(message.content,history))
+            ("assistant", f"{context}"),
+            ("assistant","you keep your reponses under 500 words")]
+        await message.channel.send(query_rag(message.content,history))
 
 client.run(token)
