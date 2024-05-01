@@ -3,7 +3,6 @@ import os
 import json
 import requests
 from dotenv import load_dotenv
-from dotenv import load_dotenv
 from langchain_community.llms  import Ollama
 from langchain.schema.document import Document
 from langchain_community.document_loaders import DirectoryLoader as dL
@@ -16,20 +15,23 @@ from langchain.document_loaders.pdf import PyPDFDirectoryLoader as loader
 from langchain_core.prompts import ChatPromptTemplate
 
 
+
 load_dotenv("../.env")
 token = os.getenv('token')
 OPENAI_API_KEY = os.getenv('OPEN_AI_KEY')
 channelId = int(os.getenv('channelId'))
 client =  discord.Client(intents=discord.Intents.default())
-
-# def load_documents():
-#     documentLoader = loader(r"C:\Users\ismas\Desktop\discord2.0\discord\books",)   
-#     return documentLoader.load()
+#os.environ["SYCL_DEVICE_FILTER"] = "level_zero:gpu:0"
+os.environ["SYCL_DEVICE_FILTER"] = "opencl:gpu:0"
 
 def load_documents():
-    loader = dL(r"C:\Users\ismas\Desktop\discord2.0\discord\book", glob="*.md")
-    #return the document
-    return loader.load()
+    documentLoader = loader(r"C:\Users\ismas\Desktop\discord2.0\discord\books",)   
+    return documentLoader.load()
+
+# def load_documents():
+#     loader = dL(r"C:\Users\ismas\Desktop\discord2.0\discord\book", glob="*.md")
+#     #return the document
+#     return loader.load()
 
 def chunkDocuments(documents):
     textSplitter = RecursiveCharacterTextSplitter(chunk_size = 1000,
@@ -38,25 +40,26 @@ def chunkDocuments(documents):
     return chunks
 
 documents = load_documents()
-#chunks = chunkDocuments(documents)
+chunks = chunkDocuments(documents)
 #print(chunks)
 
 def get_embedding_function():
-        embeddings = OllamaEmbeddings(model="nomic-embed-text")
+        embeddings = OllamaEmbeddings(model="mxbai-embed-large")
         return embeddings
 
 def add_to_chroma(chunks: list[Document]):
-        db = Chroma.from_documents(chunks, OllamaEmbeddings(model="nomic-embed-text"), persist_directory="chroma")
+        db = Chroma.from_documents(chunks, OllamaEmbeddings(model="mxbai-embed-large"), persist_directory="chroma")
         db.persist()
-#add_to_chroma(chunks)
+add_to_chroma(chunks)
 
 
 
 def query_rag(message: str, history:list ):
     prompt = ChatPromptTemplate.from_messages(history )    
-    llm= Ollama(model="llama2")
+    llm= Ollama(model="llama3")
     chain = prompt | llm | StrOutputParser()
-    return  chain.invoke({"input":message})
+    response = chain.invoke({"input":message})
+    return  response
 
 
 def get_quote():
@@ -82,7 +85,8 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-    if message.content.startswith('$inspire'):
+    print(message.content)
+    if message.content.startswith("$inspire"):
         quote = get_quote()
         await message.channel.send(quote)
     else:
@@ -95,4 +99,4 @@ async def on_message(message):
             ("assistant","you keep your reponses under 500 words")]
         await message.channel.send(query_rag(message.content,history))
 
-client.run(token)
+#client.run(token)
